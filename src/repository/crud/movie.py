@@ -140,8 +140,8 @@ class MovieCRUDRepository(BaseCRUDRepository):
         query = await self.async_session.execute(stmt)
         return query.scalars().all()
 
-    async def read_movies_by_genre(self, genre: str, page_size: int = 10, page_num: int = 1) -> typing.Sequence[Movie]:
-        stmt = sqlalchemy.select(Movie).where(Movie.genre.ilike(f"%{genre}%")).limit(page_size).offset((page_num - 1) * page_size)
+    async def read_movies_by_genre(self, genre: str) -> typing.Sequence[Movie]:
+        stmt = sqlalchemy.select(Movie).where(Movie.genre.ilike(f"%{genre}%"))
         query = await self.async_session.execute(stmt)
         return query.scalars().all()
 
