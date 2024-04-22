@@ -60,46 +60,59 @@ class TaskCrudRepository(BaseCRUDRepository):
         query = await self.async_session.execute(statement=stmt)
         return query.scalars().all()
 
-    async def add_movie_uploaded_count(self, account_id:int) -> typing.Sequence[Task]:
-        stmt = (
-            sqlalchemy.update(Task)
-            .where(Task.account_id == account_id, Task.is_completed == False)
-            .values(movies_uploaded_since_task_start=Task.movies_uploaded_since_task_start + 1)
-        )
-        await self.async_session.execute(statement=stmt)
-        await self.async_session.commit()
+    async def add_movie_uploaded_count(self, account_id: int) -> typing.Sequence[Task]:
+        # 查询账户的所有任务，预加载必要的关联数据
         select_stmt = sqlalchemy.select(Task).options(
             sqlalchemy.orm.joinedload(Task.task_category),
             sqlalchemy.orm.joinedload(Task.account).joinedload(Account.wallet)
-        ).where(Task.account_id == account_id)
-        result = await self.async_session.execute(select_stmt)
-        tasks = result.scalars().all()
-        for task in tasks:
-            if task.movies_uploaded_since_task_start >= task.task_category.movies_uploaded_count and task.reviews_posted_since_task_start >= task.task_category.reviews_posted_count and task.is_completed == False:
-                task.is_completed = True
-        await self.async_session.commit()
-        return tasks
-    async def add_review_posted_count(self, account_id:int) -> typing.Sequence[Task]:
-        stmt = (
-            sqlalchemy.update(Task)
-            .where(Task.account_id == account_id, Task.is_completed == False)
-            .values(reviews_posted_since_task_start=Task.reviews_posted_since_task_start + 1)
+        ).where(
+            Task.account_id == account_id,
+            Task.is_completed == False
         )
-        await self.async_session.execute(statement=stmt)
-        await self.async_session.commit()
-        select_stmt = sqlalchemy.select(Task).options(
-            sqlalchemy.orm.joinedload(Task.task_category),
-            sqlalchemy.orm.joinedload(Task.account).joinedload(Account.wallet)
-        ).where(Task.account_id == account_id)
+
         result = await self.async_session.execute(select_stmt)
         tasks = result.scalars().all()
+
+        # 对每个任务进行处理，只增加那些未达到上传次数上限的任务的上传计数
         for task in tasks:
-            if task.movies_uploaded_since_task_start >= task.task_category.movies_uploaded_count and task.reviews_posted_since_task_start >= task.task_category.reviews_posted_count and task.is_completed == False:
-                task.is_completed = True
+            if task.movies_uploaded_since_task_start < task.task_category.movies_uploaded_count:
+                task.movies_uploaded_since_task_start += 1
+                # 检查任务是否满足完成条件
+                if task.movies_uploaded_since_task_start >= task.task_category.movies_uploaded_count and \
+                        task.reviews_posted_since_task_start >= task.task_category.reviews_posted_count:
+                    task.is_completed = True
+
+        # 提交所有更改
         await self.async_session.commit()
-        await self.async_session.refresh(instance=task)
+
         return tasks
 
+    async def add_review_posted_count(self, account_id: int) -> typing.Sequence[Task]:
+        # 查询账户的所有任务，预加载必要的关联数据
+        select_stmt = sqlalchemy.select(Task).options(
+            sqlalchemy.orm.joinedload(Task.task_category),
+            sqlalchemy.orm.joinedload(Task.account).joinedload(Account.wallet)
+        ).where(
+            Task.account_id == account_id,
+            Task.is_completed == False
+        )
+
+        result = await self.async_session.execute(select_stmt)
+        tasks = result.scalars().all()
+
+        # 对每个任务进行处理，只增加那些未达到评论次数上限的任务的评论计数
+        for task in tasks:
+            if task.reviews_posted_since_task_start < task.task_category.reviews_posted_count:
+                task.reviews_posted_since_task_start += 1
+                # 检查任务是否满足完成条件
+                if task.movies_uploaded_since_task_start >= task.task_category.movies_uploaded_count and \
+                        task.reviews_posted_since_task_start >= task.task_category.reviews_posted_count:
+                    task.is_completed = True
+
+        # 提交所有更改
+        await self.async_session.commit()
+
+        return tasks
     async def claim_task_reward(self, account_id:int, task_id:int) -> Task:
         stmt = sqlalchemy.select(Task).options(
             sqlalchemy.orm.joinedload(Task.task_category),
@@ -156,4 +169,38 @@ class TaskCrudRepository(BaseCRUDRepository):
         await self.async_session.refresh(new_task)
         return new_task
 
+    def calculate_weighted_progress(self,movies_uploaded_since_task_start, reviews_posted_since_task_start,
+                                    movies_uploaded_count, reviews_posted_count):
+        # 初始权重
+        movie_weight = 0.5
+        review_weight = 0.5
+
+        # 检查电影上传需求是否为0
+        if movies_uploaded_count == 0:
+            movie_progress = 100
+            movie_weight = 0  # 如果没有电影上传需求，将电影的权重设为0
+        else:
+            movie_progress = min(100, (movies_uploaded_since_task_start / movies_uploaded_count) * 100)
+
+        # 检查评论发布需求是否为0
+        if reviews_posted_count == 0:
+            review_progress = 100
+            review_weight = 0  # 如果没有评论发布需求，将评论的权重设为0
+        else:
+            review_progress = min(100, (reviews_posted_since_task_start / reviews_posted_count) * 100)
+
+        # 动态调整权重
+        if movie_weight == 0 and review_weight == 0:
+            # 如果两个权重都是0（理论上不应该发生因为至少有一个任务），避免除以0的错误
+            total_weight = 1
+        else:
+            total_weight = movie_weight + review_weight
+
+        # 根据可用的任务调整权重并计算总加权进度
+        movie_weight /= total_weight
+        review_weight /= total_weight
+
+        # 计算总加权进度
+        total_progress = movie_progress * movie_weight + review_progress * review_weight
+        return total_progress
 

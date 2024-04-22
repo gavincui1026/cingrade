@@ -125,9 +125,9 @@ async def get_movies(
 async def get_movies_sorted_by_year(
     movie_repo: MovieCRUDRepository = fastapi.Depends(get_repository(repo_type=MovieCRUDRepository)),
         page: int = 1,
-        order: str = "asc",
+        yearSort: str = "asc",
 ) -> MoviesInResponse:
-    movies = await movie_repo.read_movies_sorted_by_year(page, order)
+    movies = await movie_repo.read_movies_sorted_by_year(page, yearSort)
     movie_list = []
     for movie in movies:
         movie_list.append(
@@ -156,9 +156,9 @@ async def get_movies_sorted_by_year(
 async def get_movies_sorted_by_rating(
     movie_repo: MovieCRUDRepository = fastapi.Depends(get_repository(repo_type=MovieCRUDRepository)),
     page: int = 1,
-    rating: str = "asc",
+    ratingSort: str = "asc",
 ) -> MoviesInResponse:
-    movies = await movie_repo.read_movies_sorted_by_rating(page, rating)
+    movies = await movie_repo.read_movies_sorted_by_rating(page, ratingSort)
     movie_list = []
     for movie in movies:
         movie_list.append(
@@ -219,4 +219,152 @@ async def get_movie_by_id(
         reviews=reviews,
         movie_rating=rating_percentages,
     )
+@router.get(
+    path="/search-movie/{search}",
+    name="movie:search-movie",
+    response_model=MoviesInResponse,
+    status_code=fastapi.status.HTTP_200_OK,
+    description="关键词搜索电影",
+)
+async def search_movie_by_keywords(
+    search: str,
+    movie_repo: MovieCRUDRepository = fastapi.Depends(get_repository(repo_type=MovieCRUDRepository)),
+) -> MoviesInResponse:
+    movies = await movie_repo.search_movie(search)
+    movie_list = []
+    for movie in movies:
+        movie_list.append(
+            MovieInResponse(
+                id=movie.id,
+                title=movie.title,
+                description=movie.description,
+                year=movie.year,
+                rating=movie.rating,
+                genre=movie.genre,
+                director=movie.director,
+                cast=movie.cast,
+                duration=movie.duration,
+                cover_image_url=movie.cover_image_url,
+            )
+        )
+    return MoviesInResponse(movies=movie_list)
 
+@router.get(
+    path="/get-movies-by-genre/{genre}",
+    name="movie:get-movies-by-genre",
+    response_model=MoviesInResponse,
+    status_code=fastapi.status.HTTP_200_OK,
+    description="按类型获取电影",
+)
+async def get_movies_by_genre(
+    genre: str,
+    movie_repo: MovieCRUDRepository = fastapi.Depends(get_repository(repo_type=MovieCRUDRepository)),
+) -> MoviesInResponse:
+    movies = await movie_repo.read_movies_by_genre(genre)
+    movie_list = []
+    for movie in movies:
+        movie_list.append(
+            MovieInResponse(
+                id=movie.id,
+                title=movie.title,
+                description=movie.description,
+                year=movie.year,
+                rating=movie.rating,
+                genre=movie.genre,
+                director=movie.director,
+                cast=movie.cast,
+                duration=movie.duration,
+                cover_image_url=movie.cover_image_url,
+            )
+        )
+    return MoviesInResponse(movies=movie_list)
+
+@router.get(
+    path="/get_movies_for_searching_page",
+    name="movie:get_movies_for_searching_page",
+    response_model=MoviesInResponse,
+    status_code=fastapi.status.HTTP_200_OK,
+    description="获取搜索页面的电影,共18部电影",
+)
+async def get_default_movies_for_searching_page(
+    movie_repo: MovieCRUDRepository = fastapi.Depends(get_repository(repo_type=MovieCRUDRepository)),
+) -> MoviesInResponse:
+    movies = await movie_repo.read_movies_of_searching_page()
+    movie_list = []
+    for movie in movies:
+        movie=movie.movie
+        movie_list.append(
+            MovieInResponse(
+                id=movie.id,
+                title=movie.title,
+                description=movie.description,
+                year=movie.year,
+                rating=movie.rating,
+                genre=movie.genre,
+                director=movie.director,
+                cast=movie.cast,
+                duration=movie.duration,
+                cover_image_url=movie.cover_image_url,
+            )
+        )
+    return MoviesInResponse(movies=movie_list)
+
+@router.get(
+    path="/get-movies-for-home-page",
+    name="movie:get-movies-for-home-page",
+    response_model=MoviesInResponse,
+    status_code=fastapi.status.HTTP_200_OK,
+    description="获取主页的电影,共4部电影",
+)
+async def get_default_movies_for_home_page(
+    movie_repo: MovieCRUDRepository = fastapi.Depends(get_repository(repo_type=MovieCRUDRepository)),
+) -> MoviesInResponse:
+    movies = await movie_repo.read_movies_of_home_page()
+    movie_list = []
+    for movie in movies:
+        movie = movie.movie
+        movie_list.append(
+            MovieInResponse(
+                id=movie.id,
+                title=movie.title,
+                description=movie.description,
+                year=movie.year,
+                rating=movie.rating,
+                genre=movie.genre,
+                director=movie.director,
+                cast=movie.cast,
+                duration=movie.duration,
+                cover_image_url=movie.cover_image_url,
+            )
+        )
+    return MoviesInResponse(movies=movie_list)
+
+@router.get(
+    path="/get-movies-for-just-reviewed",
+    name="movie:get-movies-for-just-reviewed",
+    response_model=MoviesInResponse,
+    status_code=fastapi.status.HTTP_200_OK,
+    description="获取JUST REVIEWED...的电影,共8部电影,首页和搜索页都需要调用这个接口"
+)
+async def get_default_movies_for_just_reviewed(
+    movie_repo: MovieCRUDRepository = fastapi.Depends(get_repository(repo_type=MovieCRUDRepository)),
+) -> MoviesInResponse:
+    movies = await movie_repo.read_movies_of_just_reviewed()
+    movie_list = []
+    for movie in movies:
+        movie = movie.movie
+        movie_list.append(
+            MovieInResponse(
+                id=movie.id,
+                title=movie.title,
+                description=movie.description,
+                year=movie.year,
+                rating=movie.rating,
+                genre=movie.genre,
+                director=movie.director,
+                cast=movie.cast,
+                duration=movie.duration,
+                cover_image_url=movie.cover_image_url,
+            )
+        )
+    return MoviesInResponse(movies=movie_list)

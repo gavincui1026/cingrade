@@ -81,13 +81,7 @@ async def signin(
     account_repo: AccountCRUDRepository = fastapi.Depends(get_repository(repo_type=AccountCRUDRepository)),
     wallet_repo: WalletCrudRepository = fastapi.Depends(get_repository(repo_type=WalletCrudRepository)),
 ) -> AccountInResponse:
-    try:
-        db_account = await account_repo.read_user_by_password_authentication(account_login=account_login, request=request)
-
-    except Exception as e:
-        print(e)
-        raise await http_exc_400_credentials_bad_signin_request()
-
+    db_account = await account_repo.read_user_by_password_authentication(account_login=account_login, request=request)
     access_token = jwt_generator.generate_access_token(account=db_account)
     wallet= await wallet_repo.read_wallet_by_account_id(account_id=db_account.id)
     transactions = []

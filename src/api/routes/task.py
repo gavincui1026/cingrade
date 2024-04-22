@@ -4,7 +4,7 @@ import fastapi
 
 from src.api.dependencies.repository import get_repository
 from src.api.dependencies.token import get_user_me
-from src.models.schemas.task import TaskCategoryInCreate, TaskCategoryInResponse, TaskInResponse
+from src.models.schemas.task import TaskCategoryInResponse, TaskInResponse
 from src.repository.crud.task import TaskCrudRepository
 
 router = fastapi.APIRouter(prefix="/task", tags=["task"])
@@ -45,6 +45,10 @@ async def read_tasks(
                 updated_at=task.updated_at,
                 movies_uploaded_since_task_start=task.movies_uploaded_since_task_start,
                 reviews_posted_since_task_start=task.reviews_posted_since_task_start,
+                progress=task_repo.calculate_weighted_progress(task.movies_uploaded_since_task_start,
+                                                               task.reviews_posted_since_task_start,
+                                                               task.task_category.movies_uploaded_count,
+                                                               task.task_category.reviews_posted_count)
             )
         )
     return tasks
@@ -81,4 +85,9 @@ async def claim_reward(
         updated_at=task.updated_at,
         movies_uploaded_since_task_start=task.movies_uploaded_since_task_start,
         reviews_posted_since_task_start=task.reviews_posted_since_task_start,
+        progress=task_repo.calculate_weighted_progress(task.movies_uploaded_since_task_start,
+                                                       task.reviews_posted_since_task_start,
+                                                       task.task_category.movies_uploaded_count,
+                                                       task.task_category.reviews_posted_count)
+
     )

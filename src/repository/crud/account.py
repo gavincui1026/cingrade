@@ -88,10 +88,10 @@ class AccountCRUDRepository(BaseCRUDRepository):
         db_account = query.scalar()
 
         if not db_account:
-            raise EntityDoesNotExist("Wrong username or wrong email!")
+            raise HTTPException(status_code=400, detail="Account does not exist!")  # type: ignore
 
         if not pwd_generator.is_password_authenticated(hash_salt=db_account.hash_salt, password=account_login.password, hashed_password=db_account.hashed_password):  # type: ignore
-            raise PasswordDoesNotMatch("Password does not match!")
+            raise HTTPException(status_code=400, detail="Password does not match!")  # type: ignore
 
         db_account.current_ip = request.client.host
         db_account.is_logged_in = True
@@ -121,7 +121,7 @@ class AccountCRUDRepository(BaseCRUDRepository):
 
         if new_account_data["email"] and new_account_data["email"] != update_account.email:
             await self.is_email_taken(email=new_account_data["email"])
-            update_stmt = update_stmt.values(username=new_account_data["email"])
+            update_stmt = update_stmt.values(email=new_account_data["email"])
 
         if new_account_data["password"]:
             update_account.set_hash_salt(hash_salt=pwd_generator.generate_salt)  # type: ignore

@@ -2,7 +2,7 @@ import typing
 
 import sqlalchemy
 
-from src.models.db.movie import Movie, Reviews
+from src.models.db.movie import Movie, Reviews, SearchingPage, HomePage, JustReviewed
 from src.models.schemas.movie import MovieInCreate, ReviewInCreate, RatingPercentages
 from src.repository.crud.base import BaseCRUDRepository
 from src.utilities.exceptions.database import EntityDoesNotExist, EntityAlreadyExists
@@ -135,6 +135,29 @@ class MovieCRUDRepository(BaseCRUDRepository):
         movies = results.scalars().unique().all()
         return movies
 
+    async def search_movie(self, search: str, page_size: int = 10, page_num: int = 1) -> typing.Sequence[Movie]:
+        stmt = sqlalchemy.select(Movie).where(Movie.title.ilike(f"%{search}%")).limit(page_size).offset((page_num - 1) * page_size)
+        query = await self.async_session.execute(stmt)
+        return query.scalars().all()
 
+    async def read_movies_by_genre(self, genre: str, page_size: int = 10, page_num: int = 1) -> typing.Sequence[Movie]:
+        stmt = sqlalchemy.select(Movie).where(Movie.genre.ilike(f"%{genre}%")).limit(page_size).offset((page_num - 1) * page_size)
+        query = await self.async_session.execute(stmt)
+        return query.scalars().all()
+
+    async def read_movies_of_searching_page(self):
+        stmt = sqlalchemy.select(SearchingPage).options(sqlalchemy.orm.joinedload(SearchingPage.movie))
+        query = await self.async_session.execute(stmt)
+        return query.scalars().all()
+
+    async def read_movies_of_home_page(self):
+        stmt = sqlalchemy.select(HomePage).options(sqlalchemy.orm.joinedload(HomePage.movie))
+        query = await self.async_session.execute(stmt)
+        return query.scalars().all()
+
+    async def read_movies_of_just_reviewed(self):
+        stmt = sqlalchemy.select(JustReviewed).options(sqlalchemy.orm.joinedload(JustReviewed.movie))
+        query = await self.async_session.execute(stmt)
+        return query.scalars().all()
 
 

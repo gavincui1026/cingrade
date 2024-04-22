@@ -1,4 +1,5 @@
 import datetime
+from typing import Optional
 
 from src.models.schemas.base import BaseSchemaModel
 
@@ -31,6 +32,7 @@ class TaskInResponse(TaskBase):
     id: int
     movies_uploaded_since_task_start: int
     reviews_posted_since_task_start: int
+    progress: Optional[float] = None
 
 class TaskInAssign(BaseSchemaModel):
     account_id: int
