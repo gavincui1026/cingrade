@@ -39,6 +39,20 @@ class AccountCRUDRepository(BaseCRUDRepository):
         new_account, new_wallet= await self.initialize_account(account=new_account)
         return new_account, new_wallet
 
+    async def create_account_by_admin(self, account_create: AccountInCreate,request) -> Account:
+        new_account = Account(username=account_create.username, email=account_create.email, is_logged_in=True, registration_ip=request.client.host, is_test_account=True)
+
+        new_account.set_hash_salt(hash_salt=pwd_generator.generate_salt)
+        new_account.set_hashed_password(
+            hashed_password=pwd_generator.generate_hashed_password(
+                hash_salt=new_account.hash_salt, new_password=account_create.password
+            )
+        )
+
+        self.async_session.add(instance=new_account)
+        await self.async_session.flush()
+        new_account, new_wallet= await self.initialize_account(account=new_account)
+        return new_account, new_wallet
 
 
     async def read_accounts(self) -> typing.Sequence[Account]:

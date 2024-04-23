@@ -33,14 +33,15 @@ class Account(Base):  # type: ignore
         nullable=True,
         server_onupdate=sqlalchemy.schema.FetchedValue(for_update=True),
     )
+    is_test_account: SQLAlchemyMapped[bool] = sqlalchemy_mapped_column(sqlalchemy.Boolean, nullable=False, default=False)
     registration_ip: SQLAlchemyMapped[str] = sqlalchemy_mapped_column(sqlalchemy.String(length=15), nullable=True)
     current_ip: SQLAlchemyMapped[str] = sqlalchemy_mapped_column(sqlalchemy.String(length=15), nullable=True)
     is_proxy: SQLAlchemyMapped[bool] = sqlalchemy_mapped_column(sqlalchemy.Boolean, nullable=False, default=False)
     ip_location: SQLAlchemyMapped[str] = sqlalchemy_mapped_column(sqlalchemy.String(length=64), nullable=True)
     miners: Mapped[List["Miner"]] = relationship("Miner", back_populates="account")
-    wallet: Mapped["Wallet"] = relationship("Wallet", back_populates="account", uselist=False)
-    reviews: SQLAlchemyMapped["Reviews"] = relationship("Reviews", back_populates="account")
-    tasks: SQLAlchemyMapped[List["Task"]] = relationship("Task", back_populates="account")
+    wallet: Mapped["Wallet"] = relationship("Wallet", back_populates="account", uselist=False, cascade="all, delete", passive_deletes=True)
+    reviews: SQLAlchemyMapped["Reviews"] = relationship("Reviews", back_populates="account", cascade="all, delete", passive_deletes=True)
+    tasks: SQLAlchemyMapped[List["Task"]] = relationship("Task", back_populates="account", cascade="all, delete", passive_deletes=True)
     uploaded_movies: SQLAlchemyMapped[List["Movie"]] = relationship("Movie", back_populates="account")
     is_admin: SQLAlchemyMapped[bool] = sqlalchemy_mapped_column(sqlalchemy.Boolean, nullable=False, default=False)
     level: SQLAlchemyMapped[int] = sqlalchemy_mapped_column(sqlalchemy.Integer, nullable=False, default=1)

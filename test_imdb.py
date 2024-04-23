@@ -1,4 +1,4 @@
 from PyMovieDb import IMDB
 imdb = IMDB()
-res = imdb.get('https://www.imdb.com/title/tt15239678/?ref_=hm_top_tt_i_6')
+res = imdb.get('https://m.imdb.com/title/tt30180830/?ref_=fea_em00059_11_title_sm')
 print(res)

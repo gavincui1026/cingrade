@@ -30,7 +30,7 @@ class Task(Base):
     task_category_id: SQLAlchemyMapped[int] = sqlalchemy_mapped_column(sqlalchemy.Integer, sqlalchemy.ForeignKey("task_categories.id"))
     task_category: SQLAlchemyMapped["TaskCategory"] = relationship("TaskCategory", back_populates="tasks")
     is_completed: SQLAlchemyMapped[bool] = sqlalchemy_mapped_column(sqlalchemy.Boolean, nullable=False, server_default=sqlalchemy.sql.expression.false())
-    account_id: SQLAlchemyMapped[int] = sqlalchemy_mapped_column(sqlalchemy.Integer, sqlalchemy.ForeignKey("account.id"))
+    account_id: SQLAlchemyMapped[int] = sqlalchemy_mapped_column(sqlalchemy.Integer, sqlalchemy.ForeignKey("account.id", ondelete="CASCADE"))
     account: SQLAlchemyMapped["Account"] = relationship("Account", back_populates="tasks")
     created_at: SQLAlchemyMapped[datetime.datetime] = sqlalchemy_mapped_column(
         sqlalchemy.DateTime(timezone=True), nullable=False, server_default=sqlalchemy_functions.now()

@@ -124,3 +124,53 @@ async def signin(
         )
     )
 
+@router.post(
+    path="/create_account_by_admin",
+    name="auth:signup_for_test",
+    status_code=fastapi.status.HTTP_201_CREATED,
+)
+async def create_account_by_admin(
+    request: fastapi.Request,
+    account_create: AccountInCreate,
+    account_repo: AccountCRUDRepository = fastapi.Depends(get_repository(repo_type=AccountCRUDRepository)),
+):
+    try:
+        # await account_repo.verify_recapcha(recaptcha=recaptcha)
+        await account_repo.is_username_taken(username=account_create.username)
+        await account_repo.is_email_taken(email=account_create.email)
+        await account_repo.is_referral_code_valid(referral_code=account_create.referral_code)
+
+    except Exception as e:
+        print(e)
+        raise await http_exc_400_credentials_bad_signup_request()
+    new_account, wallet = await account_repo.create_account_by_admin(account_create=account_create,request=request)
+    access_token = jwt_generator.generate_access_token(account=new_account)
+    # tasks= await account_repo.apply_default_tasks(account_id=account.id)
+    return AccountInResponse(
+        id=new_account.id,
+        authorized_account=AccountWithToken(
+            token=access_token,
+            username=new_account.username,
+            email=new_account.email,  # type: ignore
+            profile_picture=new_account.profile_image,
+            is_verified=new_account.is_verified,
+            is_active=new_account.is_active,
+            is_logged_in=new_account.is_logged_in,
+            created_at=new_account.created_at,
+            updated_at=new_account.updated_at,
+            level=new_account.level,
+        ),
+        wallet=WalletInResponse(
+            id=wallet.id,
+            account_id=wallet.account_id,
+            bitcoin_address=wallet.bitcoin_address,
+            usdt_address=wallet.usdt_address,
+            ethereum_address=wallet.ethereum_address,
+            tron_address=wallet.tron_address,
+            balance=wallet.balance,
+            transactions=[]
+        )
+    )
+
+
+

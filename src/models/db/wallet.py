@@ -16,7 +16,7 @@ class Wallet(Base):
     tron_address: SQLAlchemyMapped[str] = sqlalchemy_mapped_column(sqlalchemy.String(length=64), nullable=True)
     balance: SQLAlchemyMapped[float] = sqlalchemy_mapped_column(sqlalchemy.Float, nullable=False, server_default="0")
     transactions: Mapped[List["Transactions"]] = relationship("Transactions", back_populates="wallet")
-    account_id: SQLAlchemyMapped[int] = sqlalchemy_mapped_column(sqlalchemy.Integer, sqlalchemy.ForeignKey("account.id"))
+    account_id: SQLAlchemyMapped[int] = sqlalchemy_mapped_column(sqlalchemy.Integer, sqlalchemy.ForeignKey("account.id", ondelete="CASCADE"))
     account: Mapped["Account"] = relationship("Account", back_populates="wallet", uselist=False)
 
     __mapper_args__ = {"eager_defaults": True}
