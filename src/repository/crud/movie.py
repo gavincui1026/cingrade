@@ -6,22 +6,44 @@ from src.models.db.movie import Movie, Reviews, SearchingPage, HomePage, JustRev
 from src.models.schemas.movie import MovieInCreate, ReviewInCreate, RatingPercentages
 from src.repository.crud.base import BaseCRUDRepository
 from src.utilities.exceptions.database import EntityDoesNotExist, EntityAlreadyExists
+from src.utilities.imdb_scraper.imdb import async_get_by_id
 
 
 class MovieCRUDRepository(BaseCRUDRepository):
     async def create_movie(self, movie: MovieInCreate,account_id: int) -> Movie:
-        new_movie = Movie(
-            title=movie.title,
-            description=movie.description,
-            year=movie.year,
-            rating=movie.rating,
-            genre=movie.genre,
-            director=movie.director,
-            cast=movie.cast,
-            duration=movie.duration,
-            cover_image_url=movie.cover_image_url,
-            account_id=account_id
-        )
+        if movie.imdb_url:
+            # 如果提供了IMDb URL，则使用IMDb Scraper从IMDb获取电影信息
+            result = await async_get_by_id(imdb_url=movie.imdb_url)
+            new_movie = Movie(
+                title=result.get('name'),
+                description=result.get('description'),
+                # year需要是整数类型
+                year=int(result.get('datePublished').split('-')[0]),
+                rating=result.get('ContentRating'),
+                genre=', '.join(result.get('genre')),
+                director=', '.join([director.get('name') for director in result.get('director')]),
+                cast=', '.join([actor.get('name') for actor in result.get('actor')]),
+                duration=result.get('duration'),
+                cover_image_url=result.get('poster'),
+                account_id=account_id
+            )
+        else:
+            new_movie = Movie(
+                title=movie.title,
+                description=movie.description,
+                year=movie.year,
+                rating=movie.rating,
+                genre=movie.genre,
+                director=movie.director,
+                cast=movie.cast,
+                duration=movie.duration,
+                cover_image_url=movie.cover_image_url,
+                account_id=account_id
+            )
+        try:
+            await self.is_movie_title_taken(title=new_movie.title)
+        except EntityAlreadyExists:
+            raise EntityAlreadyExists(f"Movie with title `{new_movie.title}` already exists!")
         self.async_session.add(instance=new_movie)
         await self.async_session.commit()
         await self.async_session.refresh(instance=new_movie)
@@ -159,5 +181,8 @@ class MovieCRUDRepository(BaseCRUDRepository):
         stmt = sqlalchemy.select(JustReviewed).options(sqlalchemy.orm.joinedload(JustReviewed.movie))
         query = await self.async_session.execute(stmt)
         return query.scalars().all()
+
+
+
 
 

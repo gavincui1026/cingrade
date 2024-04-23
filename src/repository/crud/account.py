@@ -1,3 +1,4 @@
+import datetime
 import typing
 
 import sqlalchemy
@@ -59,7 +60,7 @@ class AccountCRUDRepository(BaseCRUDRepository):
         query = await self.async_session.execute(statement=stmt)
 
         if not query:
-            raise EntityDoesNotExist("Account with username `{username}` does not exist!")
+            raise EntityDoesNotExist(f"Account with username `{username}` does not exist!")
 
         db_account = query.scalar()  # type: ignore
         db_account.current_ip = request.client.host
@@ -67,6 +68,7 @@ class AccountCRUDRepository(BaseCRUDRepository):
         ip_check = await self.is_ip_proxy(ip=db_account.current_ip)
         db_account.is_proxy = ip_check.is_proxy
         db_account.ip_location = ip_check.ip_location
+        db_account.updated_at = datetime.datetime.now()
         await self.async_session.commit()
         await self.async_session.refresh(instance=db_account)
         return db_account
@@ -76,7 +78,7 @@ class AccountCRUDRepository(BaseCRUDRepository):
         query = await self.async_session.execute(statement=stmt)
 
         if not query:
-            raise EntityDoesNotExist("Account with email `{email}` does not exist!")
+            raise EntityDoesNotExist(f"Account with email `{email}` does not exist!")
 
         return query.scalar()  # type: ignore
 

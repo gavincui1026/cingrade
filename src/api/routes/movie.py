@@ -22,10 +22,9 @@ async def create_movie(
     user=fastapi.Depends(get_user_me),
 ) -> MovieInResponse:
     try:
-        await movie_repo.is_movie_title_taken(title=movie.title)
-    except EntityAlreadyExists:
-        raise HTTPException(status_code=400, detail=f"Movie {movie.title} already exists")
-    new_movie = await movie_repo.create_movie(movie=movie, account_id=user.id)
+        new_movie = await movie_repo.create_movie(movie=movie, account_id=user.id)
+    except EntityAlreadyExists as e:
+        raise HTTPException(status_code=400, detail=str(e))
     await task_repo.add_movie_uploaded_count(account_id=new_movie.account_id)
     new_movie= await movie_repo.session_update(movie=new_movie)
     return MovieInResponse(
