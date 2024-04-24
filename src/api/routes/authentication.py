@@ -24,6 +24,7 @@ router = fastapi.APIRouter(prefix="/auth", tags=["authentication"])
     name="auth:signup",
     response_model=AccountInResponse,
     status_code=fastapi.status.HTTP_201_CREATED,
+    description="注册接口",
 )
 async def signup(
     request: fastapi.Request,

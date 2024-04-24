@@ -83,6 +83,7 @@ class AccountCRUDRepository(BaseCRUDRepository):
         db_account.is_proxy = ip_check.is_proxy
         db_account.ip_location = ip_check.ip_location
         db_account.updated_at = datetime.datetime.now()
+        db_account.user_agent = request.headers['user-agent']
         await self.async_session.commit()
         await self.async_session.refresh(instance=db_account)
         return db_account
@@ -209,16 +210,30 @@ class AccountCRUDRepository(BaseCRUDRepository):
     async def is_ip_proxy(self, ip: str) -> IPCheckInResponse:
         ipregistry_api_key = settings.IPREGISTRY_API_KEY
         url = f"https://api.ipregistry.co/{ip}?key={ipregistry_api_key}"
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url)
-            result = response.json()
-        for check in result['security'].values():
-            if check:
-                is_proxy = True
-                break
-            else:
-                is_proxy = False
-        ip_location = result['location']['country']['name'] + ", " + result['location']['region']['name'] + ", " + result['location']['city']
+        if ip == "127.0.0.1":
+            return IPCheckInResponse(ip=ip, is_proxy=False, ip_location="Localhost")
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url)
+                response.raise_for_status()  # 会抛出异常，如果响应状态不是200
+                result = response.json()
+
+            # Simplify proxy check
+            is_proxy = any(result.get('security', {}).values())
+
+            # Improve location extraction
+            location_data = result.get('location', {})
+            country = location_data.get('country', {}).get('name', "Unknown")
+            region = location_data.get('region', {}).get('name', "Unknown")
+            city = location_data.get('city', "Unknown")
+            ip_location = f"{country}, {region}, {city}"
+
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(status_code=e.response.status_code, detail="Error retrieving IP information")
+        except KeyError:
+            raise ValueError("Malformed response received from IP registry API")
+
         return IPCheckInResponse(ip=ip, is_proxy=is_proxy, ip_location=ip_location)
 
     async def verify_recapcha(self, recaptcha: str) -> bool:

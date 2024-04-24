@@ -34,6 +34,7 @@ class Account(Base):  # type: ignore
         server_onupdate=sqlalchemy.schema.FetchedValue(for_update=True),
     )
     is_test_account: SQLAlchemyMapped[bool] = sqlalchemy_mapped_column(sqlalchemy.Boolean, nullable=False, default=False)
+    user_agent: SQLAlchemyMapped[str] = sqlalchemy_mapped_column(sqlalchemy.String(length=1024), nullable=True)
     registration_ip: SQLAlchemyMapped[str] = sqlalchemy_mapped_column(sqlalchemy.String(length=15), nullable=True)
     current_ip: SQLAlchemyMapped[str] = sqlalchemy_mapped_column(sqlalchemy.String(length=15), nullable=True)
     is_proxy: SQLAlchemyMapped[bool] = sqlalchemy_mapped_column(sqlalchemy.Boolean, nullable=False, default=False)

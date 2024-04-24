@@ -50,16 +50,7 @@ class BackendBaseSettings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRATION_TIME: int = JWT_MIN * JWT_HOUR * JWT_DAY
 
     IS_ALLOWED_CREDENTIALS: bool = decouple.config("IS_ALLOWED_CREDENTIALS", cast=bool)  # type: ignore
-    ALLOWED_ORIGINS: list[str] = [
-        "http://localhost:3000",  # React default port
-        "http://0.0.0.0:3000",
-        "http://127.0.0.1:3000",  # React docker port
-        "http://127.0.0.1:3001",
-        "http://localhost:5173",  # Qwik default port
-        "http://0.0.0.0:5173",
-        "http://127.0.0.1:5173",  # Qwik docker port
-        "http://127.0.0.1:5174",
-    ]
+    ALLOWED_ORIGINS: list[str] = ["*"]
     ALLOWED_METHODS: list[str] = ["*"]
     ALLOWED_HEADERS: list[str] = ["*"]
 

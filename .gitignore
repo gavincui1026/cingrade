@@ -147,4 +147,5 @@ cython_debug/
 # FastAPI specific
 # You may want to exclude specific environment files, database files, or other configurations
 # that are specific to your project setup.
-
+# idea/
+.idea/
