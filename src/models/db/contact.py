@@ -1,3 +1,5 @@
+import datetime
+
 import sqlalchemy
 from src.repository.table import Base
 from sqlalchemy.orm import Mapped as SQLAlchemyMapped, mapped_column as sqlalchemy_mapped_column, relationship, Mapped, \
@@ -18,4 +20,6 @@ class Contact(Base):  # type: ignore
     region_name: SQLAlchemyMapped[str] = sqlalchemy_mapped_column(sqlalchemy.String(length=64), nullable=False)
     city: SQLAlchemyMapped[str] = sqlalchemy_mapped_column(sqlalchemy.String(length=64), nullable=False)
     uuid: SQLAlchemyMapped[str] = sqlalchemy_mapped_column(sqlalchemy.String(length=64), nullable=False)
-
+    created_at: SQLAlchemyMapped[datetime.datetime] = sqlalchemy_mapped_column(
+        sqlalchemy.DateTime(timezone=True), nullable=False, server_default=sqlalchemy.func.now()
+    )
