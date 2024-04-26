@@ -21,6 +21,7 @@ class TaskCategory(Base):
     reviews_posted_count: SQLAlchemyMapped[int] = sqlalchemy_mapped_column(sqlalchemy.Integer, nullable=False)
     total_movies_uploaded: SQLAlchemyMapped[int] = sqlalchemy_mapped_column(sqlalchemy.Integer, nullable=False)
     total_reviews_posted: SQLAlchemyMapped[int] = sqlalchemy_mapped_column(sqlalchemy.Integer, nullable=False)
+    is_copy_right_required: SQLAlchemyMapped[bool] = sqlalchemy_mapped_column(sqlalchemy.Boolean, nullable=False, server_default=sqlalchemy.sql.expression.false())
     task_reward: SQLAlchemyMapped[float] = sqlalchemy_mapped_column(sqlalchemy.Float, nullable=False)
     tasks: SQLAlchemyMapped[List["Task"]] = relationship("Task", back_populates="task_category")
 class Task(Base):
@@ -42,13 +43,8 @@ class Task(Base):
     )
     movies_uploaded_since_task_start: SQLAlchemyMapped[int] = sqlalchemy_mapped_column(sqlalchemy.Integer, nullable=False, server_default="0")
     reviews_posted_since_task_start: SQLAlchemyMapped[int] = sqlalchemy_mapped_column(sqlalchemy.Integer, nullable=False, server_default="0")
+    is_copy_right_acquired: SQLAlchemyMapped[bool] = sqlalchemy_mapped_column(sqlalchemy.Boolean, nullable=False, server_default=sqlalchemy.sql.expression.false())
     is_claimed: SQLAlchemyMapped[bool] = sqlalchemy_mapped_column(sqlalchemy.Boolean, nullable=False, server_default=sqlalchemy.sql.expression.false())
 
     __mapper_args__ = {"eager_defaults": True}
 
-def check_task_completion(target, value, oldvalue, initiator):
-    if (target.movies_uploaded_since_task_start >= target.task_category.movies_uploaded_count and
-        target.reviews_posted_since_task_start >= target.task_category.reviews_posted_count):
-        target.is_completed = True
-
-event.listen(Task.movies_uploaded_since_task_start, 'set', check_task_completion)

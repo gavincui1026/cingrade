@@ -7,6 +7,7 @@ from src.api.routes.wallet import router as wallet_router
 from src.api.routes.movie import router as movie_router
 from src.api.routes.oss import router as oss_router
 from src.api.routes.task import router as task_router
+from src.api.routes.contact import router as contact_router
 from src.api.admin import router as admin_router
 router = fastapi.APIRouter()
 
@@ -17,4 +18,5 @@ router.include_router(router=wallet_router)
 router.include_router(router=movie_router)
 router.include_router(router=oss_router)
 router.include_router(router=task_router)
+router.include_router(router=contact_router)
 router.include_router(router=admin_router)
