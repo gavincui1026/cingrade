@@ -61,7 +61,7 @@ class AccountCRUDRepository(BaseCRUDRepository):
         return query.scalars().all()
 
     async def read_account_by_id(self, id: int) -> Account:
-        stmt = sqlalchemy.select(Account).where(Account.id == id)
+        stmt = sqlalchemy.select(Account).options(sqlalchemy.orm.joinedload(Account.wallet), sqlalchemy.orm.joinedload(Account.tasks)).where(Account.id == id)
         query = await self.async_session.execute(statement=stmt)
 
         if not query:

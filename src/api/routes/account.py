@@ -158,7 +158,7 @@ async def get_profile(
 ) -> AccountInResponse:
     db_account = await account_repo.read_account_by_id(id=user.id)
     access_token = jwt_generator.generate_access_token(account=db_account)
-    wallet = await wallet_repo.read_wallet_by_id(id=db_account.id)
+    wallet = await wallet_repo.read_wallet_by_id(id=db_account.wallet.id)
     transactions = []
     for transaction in wallet.transactions:
         transactions.append(

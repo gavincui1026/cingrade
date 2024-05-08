@@ -204,10 +204,3 @@ async def withdraw(
         balance=wallet.balance,
         transactions=transactions,
         )
-
-
-
-
-
-
-
